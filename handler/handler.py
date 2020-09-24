@@ -13,7 +13,7 @@ bucket = os.getenv("Bucket")
 table = dynamodb.Table(os.getenv("Table"))
 
 def list_messages(event, context):
-    messages = table.scan()["Messages"]
+    messages = table.scan()["Items"]
     return {
         "body": json.dumps(messages),
         "statusCode": 200
