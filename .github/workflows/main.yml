@@ -10,6 +10,7 @@ jobs:
         with:
           cdk_subcommand: 'deploy'
           #cdk_stack: 'stack1'
+          debug.log: true
           actions_comment: false
           args: '--require-approval never'
         env:
