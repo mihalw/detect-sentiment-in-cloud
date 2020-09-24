@@ -1,1 +1,2 @@
-Detecting sentiment from messages in various languages.
+Using AWS to detect sentiment from messages in different languages.
+ 
