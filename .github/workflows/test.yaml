@@ -1,46 +1,34 @@
-name: Backend service deployment pipeline
+name: CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
   pull_request:
-    branches:
-      - master
-
-env:
-  NODE_VERSION: '12.13.0'
-  AWS_REGION: us-east-1
+    branches: [ master ]
 
 jobs:
   build:
-    name: Build, test and deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+      - name: Install node 12.18.1
+        uses: actions/checkout@v2, actions/setup-node@v1
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '12.18.1'
+        run: npm install
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Checkout project repository
         uses: actions/checkout@v2
 
       - name: Setup CDK and deploy project
-        working-directory: ./
         run: |
-          npm install
-          npm run cdk bootstrap
-          npm run cdk synth
-          npm run cdk deploy -- --require-approval=never
-        env:
-          STACK_REGION: ${{ env.AWS_REGION }}
-
-
+          cdk bootstrap
+          cdk synth
+          cdk deploy -- --require-approval=never
