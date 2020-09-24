@@ -83,7 +83,7 @@ def verify_message(event, context):
     elif sentiment == "MIXED":
         decision = "Needed human verify"
     
-    print("Decision=" +decisione)
+    print("Decision=" +decision)
     table.update_item(
         Key={
             "ID": key
