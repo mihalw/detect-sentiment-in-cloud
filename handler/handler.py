@@ -2,102 +2,98 @@ import json
 import os
 import boto3
 import uuid
-import pprint
-import base64
 
-s3client = boto3.client("s3")
-dynamodb = boto3.resource("dynamodb")
-rekog = boto3.client('rekognition')
+s3client = boto3.client('s3')
+s3 = boto3.resource('s3')
+dynamodb = boto3.resource('dynamodb')
+translate = boto3.client('translate')
+comprehend = boto3.client('comprehend')
 
 bucket = os.getenv("Bucket")
 table = dynamodb.Table(os.getenv("Table"))
 
-def get_public_url(bucket, key):
-    return "https://s3.us-east-1.amazonaws.com/{}/{}".format(bucket, key)
-
-def list(event, context):
-    items = table.scan()["Items"]
+def list_messages(event, context):
+    messages = table.scan()["Messages"]
     return {
-        "body": json.dumps(items),
+        "body": json.dumps(messages),
         "statusCode": 200
     }
 
-
-def upload(event, context):
-    uid = str(uuid.uuid4()) + ".png"
+def send_message(event, context):
     
     print(event['body'])
+    uid = str(uuid.uuid4()) + ".txt"
     request_body = json.loads(event['body'])
 
     s3client.put_object(
         Bucket=bucket,
         Key=uid,
-        Body=base64.b64decode(request_body["file"]),
+        Body=request_body["text"],
         ACL="public-read"
     )
 
-    print("File {} saved as {}".format(request_body["name"], uid))
+    print("File {} saved as {}".format(request_body["filename"], uid))
 
     table.put_item(Item={
         "ID": uid,
-        "FileName": request_body["name"],
-        "Result": False,
-        "URL": get_public_url(bucket, uid)
+        "FileName": request_body["filename"],
+        "MessageStatus": "not yet verified",
+        "Message": request_body["text"],
     })
 
-    body = {
-        "url": get_public_url(bucket, uid)
-    }
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": "OK. Your message will be verified\n"
     }
 
     return response
 
-def created(event, context):
+def verify_message(event, context):
+
     print(event)
-    def check_hotdog(records):
-        for i in records:
-            if i["Name"] == "Hot Dog":
-                return True
-        return False
     
     for j in event["Records"]:
         records = json.loads(j["body"])
-        for i in records["Records"]: # co tu nie tak ? ;/
+        for i in records["Records"]: 
             bucket = i["s3"]["bucket"]["name"]
             key = i["s3"]["object"]["key"]
             print(bucket, key)
 
-            response = rekog.detect_labels(
-                Image={
-                    "S3Object": {
-                        "Bucket": bucket,
-                        "Name": key
-                    }
-                },
-                MaxLabels=10,
-                MinConfidence=90
-            )
-            result = check_hotdog(response["Labels"])
+    # read data from file stored on s3
+    obj = s3.Object(bucket, key)
+    body = obj.get()['Body'].read().decode('utf-8') 
+    print(body)
 
-            # table.put_item(Item={
-            #     "ID": key.split(".")[0],
-            #     "Result": True,
-            #     "HotDog": result
-            # })
-            table.update_item(
-                Key={
-                    "ID": key
-                },
-                UpdateExpression="set #s = :r, HotDog = :h",
-                ExpressionAttributeValues={
-                    ":r": True,
-                    ":h": result
-                },
-                ExpressionAttributeNames={
-                    "#s": "Result"
-                }
-            )
+    # detect language automatically and translate to English
+    result_translate = translate.translate_text(Text=body, SourceLanguageCode="auto", TargetLanguageCode="en") 
+    print(result_translate["SourceLanguageCode"])
+    print(result_translate["TranslatedText"])
+
+    # detect sentiment of message in English
+    result_sentiment = comprehend.detect_sentiment(LanguageCode="en", Text=result_translate["TranslatedText"])
+    print(result_sentiment)
+    sentiment = result_sentiment["Sentiment"]
+    print(sentiment)
+
+    decision = ""
+    if sentiment == "NEGATIVE":
+        decision = "Rejected"
+    elif sentiment == "POSITIVE" or sentiment == "NEUTRAL":
+        decision = "Accepted"
+    elif sentiment == "MIXED":
+        decision = "Needed human verify"
+    
+    print("Decision=" +decision)
+    table.update_item(
+        Key={
+            "ID": key
+        },
+        UpdateExpression="set #s = :r",
+        ExpressionAttributeValues={
+            ":r": decision,
+        },
+        ExpressionAttributeNames={
+            "#s": "MessageStatus"
+        }
+    )
     return True

@@ -24,7 +24,7 @@ export class TextTranslationInCloudStack extends cdk.Stack {
       billingMode: BillingMode.PAY_PER_REQUEST,
     });
 
-    const bucket = new Bucket(this, "Bucket", {});
+    const bucket = new Bucket(this, "Bucket1", {});
 
     const q = new Queue(this, "Queue", {
       visibilityTimeout: Duration.minutes(5),
@@ -37,48 +37,48 @@ export class TextTranslationInCloudStack extends cdk.Stack {
       Table: table.tableName,
     };
     const api = new RestApi(this, "Api");
-    const resource_upload = api.root.addResource("upload");
+    const resource_send = api.root.addResource("send");
     const resource_list = api.root.addResource("list");
 
-    const f_upload = new Function(this, "LambdaUpload", {
+    const f_send_message = new Function(this, "LambdaSendMessage", {
       code,
-      handler: "handler.upload",
+      handler: "handler.send_message",
       runtime: Runtime.PYTHON_3_7,
       memorySize: 128,
       environment,
     });
-    resource_upload.addMethod("POST", new LambdaIntegration(f_upload), {
+    resource_send.addMethod("POST", new LambdaIntegration(f_send_message), {
       authorizationType: AuthorizationType.NONE,
     });
-    table.grantWriteData(f_upload);
-    bucket.grantWrite(f_upload);
+    table.grantWriteData(f_send_message);
+    bucket.grantWrite(f_send_message);
 
-    const f_list = new Function(this, "LambdaList", {
+    const f_verify_message = new Function(this, "LambdaVerifyMessage", {
       code,
-      handler: "handler.list",
+      handler: "handler.verify_message",
       runtime: Runtime.PYTHON_3_7,
       memorySize: 128,
       environment,
     });
-    resource_list.addMethod("GET", new LambdaIntegration(f_list), {
-      authorizationType: AuthorizationType.NONE,
-    });
-    table.grantReadData(f_list);
-
-    const f_created = new Function(this, "LambdaCreated", {
-      code,
-      handler: "handler.created",
-      runtime: Runtime.PYTHON_3_7,
-      memorySize: 128,
-      environment,
-    });
-    f_created.addEventSource(new SqsEventSource(q, { batchSize: 1 }));
-    table.grantReadWriteData(f_created);
-    f_created.addToRolePolicy(
+    f_verify_message.addEventSource(new SqsEventSource(q, { batchSize: 1 }));
+    table.grantReadWriteData(f_verify_message);
+    f_verify_message.addToRolePolicy(
       new PolicyStatement({
-        actions: ["rekognition:DetectLabels"],
+        actions: ["translate:TranslateText", "comprehend:DetectDominantLanguage", "comprehend:DetectSentiment"],
         resources: ["*"],
       })
     );
+
+    const f_list_messages = new Function(this, "LambdaListMessages", {
+      code,
+      handler: "handler.list_messages",
+      runtime: Runtime.PYTHON_3_7,
+      memorySize: 128,
+      environment,
+    });
+    resource_list.addMethod("GET", new LambdaIntegration(f_list_messages), {
+      authorizationType: AuthorizationType.NONE,
+    });
+    table.grantReadData(f_list_messages);
   }
 }

@@ -6,8 +6,9 @@ FILE=$2
 FILENAME=$(basename $FILE)
 echo "Uploading file $FILENAME to $API_ENDPOINT"
 
-ENCODED=$(base64 -i -w 0 $FILE)
-
-JSON="{\"file\": \"$ENCODED\", \"name\": \"$FILENAME\"}"
+TEXT=$(cat $FILE)
+JSON="{\"text\": \"$TEXT\", \"filename\": \"$FILENAME\"}"
 
 curl -XPOST -d "$JSON" -H "Content-type: application/json" $API_ENDPOINT
+
+
