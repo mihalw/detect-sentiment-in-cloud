@@ -6,7 +6,7 @@ jobs:
     steps:
 
       - name: cdk diff
-        uses: youyo/aws-cdk-github-actions@v1
+        uses: youyo/aws-cdk-github-actions@v1.1.10
         with:
           cdk_subcommand: 'diff'
           actions_comment: true
