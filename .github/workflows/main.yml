@@ -8,7 +8,6 @@ jobs:
       - name: cdk deploy
         uses: youyo/aws-cdk-github-actions@v1
         with:
-          working_dir: ./~/Desktop/text-translation-in-cloud
           cdk_subcommand: 'deploy'
           cdk_stack: 'TextTranslationInCloudStack'
           actions_comment: false
