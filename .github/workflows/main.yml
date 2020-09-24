@@ -10,7 +10,7 @@ jobs:
         with:
           working_dir: ./~/Desktop/text-translation-in-cloud
           cdk_subcommand: 'deploy'
-          #cdk_stack: 'TextTranslationInCloudStack'
+          cdk_stack: 'TextTranslationInCloudStack'
           actions_comment: false
           args: '--require-approval never'
         env:
