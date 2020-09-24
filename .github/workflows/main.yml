@@ -8,7 +8,7 @@ jobs:
       - name: cdk deploy
         uses: youyo/aws-cdk-github-actions@v1
         with:
-          cdk_subcommand: 'deploy'
+          cdk_subcommand: 'deployr'
           #cdk_stack: 'TextTranslationInCloudStack'
           actions_comment: false
           args: '--require-approval never'
