@@ -30,6 +30,6 @@ jobs:
         run: |
           npm install
           npm install aws-cdk
-          cdk bootstrap
-          cdk synth
-          cdk deploy -- --require-approval=never
+          npm run cdk bootstrap
+          npm run cdk synth
+          npm run cdk deploy -- --require-approval=never
