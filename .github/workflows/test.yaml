@@ -29,7 +29,6 @@ jobs:
       - name: Setup CDK, deploy project
         run: |
           npm install
-          npm install aws-cdk
           npm run cdk bootstrap
           npm run cdk synth
           npm run cdk deploy -- --require-approval=never
