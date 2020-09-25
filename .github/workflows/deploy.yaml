@@ -31,4 +31,4 @@ jobs:
           npm install
           npm run cdk bootstrap
           npm run cdk synth
-          npm run cdk deploy -- --require-approval=never > endpoints.txt
+          npm run cdk deploy -- --require-approval=never
