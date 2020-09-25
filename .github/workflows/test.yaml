@@ -26,7 +26,7 @@ jobs:
       - name: Checkout project repository
         uses: actions/checkout@v2
 
-      - name: Setup CDK and deploy project
+      - name: Setup CDK, deploy project
         run: |
           npm install
           npm install aws-cdk
